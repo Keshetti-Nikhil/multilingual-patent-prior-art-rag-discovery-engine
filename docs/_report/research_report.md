@@ -102,6 +102,22 @@ inherits BM25's monolingual sharpness (0.975) but also inherits its cross-lingua
 death, landing at 0.116. Averaged over a 45% cross-lingual query mix, that pulls
 hybrid down to 0.589 MRR, well below plain dense at 0.859.
 
+The same numbers, rendered. Recall@k by retriever and the ranking-quality bars:
+
+![Recall@k by retriever](../../results/figures/chart_1.png){width=49%}
+![NDCG@10 by retriever](../../results/figures/chart_2.png){width=49%}
+
+The monolingual versus cross-lingual MRR split is where the fusion failure is
+visible, and the quality-versus-latency trade-off shows the cost of each leg:
+
+![MRR by query type](../../results/figures/chart_3.png){width=49%}
+![Quality vs latency](../../results/figures/chart_4.png){width=49%}
+
+The LLM-judge faithfulness of the top-1 context, and the evaluation query mix:
+
+![Judge faithfulness](../../results/figures/chart_5.png){width=49%}
+![Evaluation query mix](../../results/figures/chart_6.png){width=49%}
+
 # 6. Why the hybrid loses to dense
 
 This is the finding worth carrying out of the bench. Reciprocal rank fusion is

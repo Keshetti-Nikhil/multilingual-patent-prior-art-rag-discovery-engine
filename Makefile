@@ -12,5 +12,5 @@ bench: ; uv run ppa bench --out-dir runs/latest
 bench-fast: ; uv run ppa bench --out-dir runs/fast --n-docs 6000 --n-queries 250
 pdf:
 	cd docs/_report && pandoc research_report.md -o ../research_report.pdf \
-	    --pdf-engine=typst --toc --toc-depth=2 --number-sections
+	    --pdf-engine=typst --toc --toc-depth=2 --number-sections --resource-path=.:../..
 clean: ; rm -rf runs/* .pytest_cache .mypy_cache .ruff_cache
