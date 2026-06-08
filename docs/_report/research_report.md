@@ -154,7 +154,98 @@ Every number in section 5 comes from `runs/latest/summary.json` at the default
 seed 20240117. The smoke configuration (`make bench-fast`, 6,000 documents)
 preserves the same ordering at a fraction of the runtime and is what CI runs.
 
-# 10. References
+# 10. Full metric tables
+
+The headline table in section 5 reports a single operating point per retriever.
+The complete Recall@k sweep below shows *where* each retriever's recall is spent.
+
+| Retriever | R@1 | R@5 | R@10 | R@20 | R@50 | latency (ms/q) |
+|---|---|---|---|---|---|---|
+| bm25 | 0.422 | 0.476 | 0.496 | 0.513 | 0.537 | 2.48 |
+| dense | 0.782 | 0.959 | 0.981 | 0.994 | 1.000 | 11.91 |
+| hybrid | 0.530 | 0.578 | 0.747 | 0.980 | 0.998 | 14.71 |
+| hybrid + rerank | 0.998 | 0.998 | 0.998 | 0.998 | 0.998 | 14.32 |
+
+Three things stand out. First, BM25's recall is almost flat from k=1 to k=50
+(0.422 to 0.537): the documents it can find it finds immediately, and widening
+the window does not rescue the cross-lingual queries because the gold document is
+not anywhere in its ranking. Second, dense climbs steeply (0.782 to 1.000),
+which is the signature of a retriever that surfaces the right document but ranks
+it a few positions too low; this is exactly the regime a reranker repairs. Third,
+hybrid + rerank is flat at 0.998 across all k, because the rerank pass moves the
+gold document to rank 1 whenever it is in the fused shortlist, so deeper windows
+add nothing.
+
+The latency column is the honest cost ledger. BM25 is the cheapest at 2.48 ms per
+query thanks to the precomputed sparse weight matrix. Dense costs about 5x more
+for the full matrix-vector product over 920k paragraphs. Hybrid and rerank both
+run all of BM25 and dense plus their fusion or rescoring, landing near 14 ms; the
+rerank's extra cross-encoder pass over 50 candidates is nearly free next to the
+first-stage retrieval it depends on.
+
+# 11. Test suite and results
+
+The benchmark ships with 14 tests across four files, organised as a pyramid: the
+broad base verifies data generation and pure metric functions, the middle layer
+checks retriever behaviour, and the apex runs the whole pipeline end to end.
+
+**`test_data.py` (5 tests).** Determinism is verified at two seeds by regenerating
+the corpus and asserting the document ids, embeddings, and gold-document
+assignments are identical. Shapes are checked against the spec. Embeddings are
+asserted to be unit-norm. The keystone test, `test_cross_lingual_has_no_token_overlap`,
+samples cross-lingual queries and asserts the maximum surface-token overlap with
+their gold documents is exactly zero: this is the invariant the whole experiment
+rests on, so it is tested rather than assumed.
+
+**`test_metrics.py` (4 tests).** Reciprocal rank, NDCG, hit, recall, and context
+precision are each checked against hand-computed values at known rank positions,
+including the miss case where the gold document is absent and every metric must
+return zero.
+
+**`test_models.py` (3 tests).** The retrievers are exercised on a small seeded
+corpus. `test_dense_bridges_cross_lingual` asserts the directional result that
+dense pinpoints cross-lingual gold documents more often than BM25, the
+quantitative claim the bench is built to demonstrate.
+
+**`test_runner.py` (2 tests).** A tmp-path end-to-end smoke asserts `summary.json`
+is written with one entry per retriever and all scores in range, and an invariant
+test asserts the rerank stack lands at or above plain hybrid on MRR.
+
+The full run, captured verbatim from `docs/test_results/pytest.log`:
+
+```
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.3, pluggy-1.6.0
+configfile: pyproject.toml
+testpaths: tests
+collected 14 items
+
+tests/test_data.py::test_deterministic[7] PASSED                         [  7%]
+tests/test_data.py::test_deterministic[23] PASSED                        [ 14%]
+tests/test_data.py::test_shapes PASSED                                   [ 21%]
+tests/test_data.py::test_embeddings_normalised PASSED                    [ 28%]
+tests/test_data.py::test_cross_lingual_has_no_token_overlap PASSED       [ 35%]
+tests/test_metrics.py::test_reciprocal_rank_top PASSED                   [ 42%]
+tests/test_metrics.py::test_ndcg_positions PASSED                        [ 50%]
+tests/test_metrics.py::test_hit_and_recall PASSED                        [ 57%]
+tests/test_metrics.py::test_context_precision PASSED                     [ 64%]
+tests/test_models.py::test_rank_returns_doc_ids PASSED                   [ 71%]
+tests/test_models.py::test_dense_bridges_cross_lingual PASSED            [ 78%]
+tests/test_models.py::test_all_retrievers_run PASSED                     [ 85%]
+tests/test_runner.py::test_end_to_end_smoke PASSED                       [ 92%]
+tests/test_runner.py::test_rerank_not_worse_than_dense_overall PASSED    [100%]
+
+============================== 14 passed in 1.62s ==============================
+```
+
+Static analysis runs alongside the tests in CI: `ruff check` and `ruff format
+--check` enforce style and import order, and `mypy --strict` type-checks the full
+`src` tree with no escapes beyond the scientific-library import overrides. The CI
+workflow additionally runs the smoke benchmark on every push so a regression in
+the data generator or a retriever surfaces as a failed build, not a silently
+wrong number.
+
+# 12. References
 
 1. Robertson, S. & Zaragoza, H. (2009). *The Probabilistic Relevance Framework: BM25 and Beyond.* Foundations and Trends in IR.
 2. Karpukhin, V. et al. (2020). *Dense Passage Retrieval for Open-Domain Question Answering.* EMNLP.
