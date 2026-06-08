@@ -1,0 +1,51 @@
+[project]
+name = "multilingual-patent-prior-art-rag-discovery-engine"
+version = "0.5.0"
+description = "Cross-lingual prior-art retrieval bench comparing BM25, dense, hybrid RRF, and hybrid+rerank across a 920k-paragraph synthetic patent corpus."
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Nikhil Keshetti" }]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+    "typer>=0.9",
+    "rich>=13.7",
+    "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4", "mypy>=1.8"]
+real-llm = ["anthropic>=0.40"]
+
+[project.scripts]
+ppa = "ppa.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ppa"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF", "TID", "PT"]
+ignore = ["B008"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["scipy.*", "matplotlib.*", "anthropic.*", "cycler.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

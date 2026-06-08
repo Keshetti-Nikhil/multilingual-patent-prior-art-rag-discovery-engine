@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-9.0.3, pluggy-1.6.0 -- /Users/nikhilkeshetti/Projects/ai-portfolio/projects/multilingual-patent-prior-art-rag-discovery-engine/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/nikhilkeshetti/Projects/ai-portfolio/projects/multilingual-patent-prior-art-rag-discovery-engine
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-7.1.0
+collecting ... collected 14 items
+
+tests/test_data.py::test_deterministic[7] PASSED                         [  7%]
+tests/test_data.py::test_deterministic[23] PASSED                        [ 14%]
+tests/test_data.py::test_shapes PASSED                                   [ 21%]
+tests/test_data.py::test_embeddings_normalised PASSED                    [ 28%]
+tests/test_data.py::test_cross_lingual_has_no_token_overlap PASSED       [ 35%]
+tests/test_metrics.py::test_reciprocal_rank_top PASSED                   [ 42%]
+tests/test_metrics.py::test_ndcg_positions PASSED                        [ 50%]
+tests/test_metrics.py::test_hit_and_recall PASSED                        [ 57%]
+tests/test_metrics.py::test_context_precision PASSED                     [ 64%]
+tests/test_models.py::test_rank_returns_doc_ids PASSED                   [ 71%]
+tests/test_models.py::test_dense_bridges_cross_lingual PASSED            [ 78%]
+tests/test_models.py::test_all_retrievers_run PASSED                     [ 85%]
+tests/test_runner.py::test_end_to_end_smoke PASSED                       [ 92%]
+tests/test_runner.py::test_rerank_not_worse_than_dense_overall PASSED    [100%]
+
+============================== 14 passed in 1.62s ==============================
